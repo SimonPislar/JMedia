@@ -5,6 +5,7 @@ import com.JMedia.Data.UserData.User;
 import com.JMedia.Data.UserData.UserDataController;
 import com.JMedia.Security.CodeGenerator;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -127,9 +128,24 @@ public class HTTPWebController {
         @Return: String - Returns the code that was sent to the user.
     */
     @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping(path="/twoFactorAuthenticator")
-    public String twoFactorAuthenticator(@RequestParam (value ="email") String email) {
-        //emailSender.send(email, "Two Factor Authentication", "Your code is: " + code);
-        return codeGenerator.generateRandomCode(6);
+    @PostMapping(path="/set-two-factor-authentication-code")
+    public String setTwoFactorAuthenticationCode(@RequestParam (value ="email") String email) {
+        String code = codeGenerator.generateRandomCode(6);
+        emailSender.send(email, "Two-Factor Authentication", "Your code is: " + code);
+        userDataController.setTwoFactorCode(email, code);
+        return "Set";
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @PostMapping(path="/two-factor-authentication-check")
+    public String getTwoFactorAuthenticationCode(@RequestParam (value ="email") String email,
+                                                 @RequestParam (value ="code") String code) {
+        String generatedCode = userDataController.getTwoFactorCode(email);
+        System.out.println("Comparing codes: " + generatedCode + " and " + code + "...");
+        if (generatedCode.equals(code)) {
+            return "true";
+        } else {
+            return "false";
+        }
     }
 }
