@@ -12,11 +12,13 @@ public class UserDataController {
 
     private final UserRepository userRepository;
     private final PasswordHandler passwordHandler;
+    private final TwoFactorCodesRepository twoFactorCodesRepository;
 
     @Autowired
-    public UserDataController(UserRepository userRepository, PasswordHandler passwordHandler) {
+    public UserDataController(UserRepository userRepository, PasswordHandler passwordHandler, TwoFactorCodesRepository twoFactorCodesRepository) {
         this.userRepository = userRepository;
         this.passwordHandler = passwordHandler;
+        this.twoFactorCodesRepository = twoFactorCodesRepository;
     }
 
     /*
@@ -85,6 +87,37 @@ public class UserDataController {
             return "true";
         } else {
             return "false";
+        }
+    }
+
+    /*
+        @Brief: This method is used to set a two-factor authentication code for a user.
+        @Param: email - The email of the user to be set the code.
+        @Param: code - The code to be set.
+        @Return: void - Returns nothing.
+     */
+    public void setTwoFactorCode(String email, String code) {
+        Optional<User> user = this.userRepository.findByEmail(email);
+        System.out.println("Found user with email: " + email);
+        if (user.isPresent()) {
+            TwoFactorCodes twoFactorCodes = new TwoFactorCodes();
+            twoFactorCodes.setEmail(email);
+            twoFactorCodes.setCode(code);
+            this.twoFactorCodesRepository.save(twoFactorCodes);
+        }
+    }
+
+    /*
+        @Brief: This method is used to get a two-factor authentication code for a user.
+        @Param: email - The email of the user whose code is to be retrieved.
+        @Return: String - Returns the code.
+     */
+    public String getTwoFactorCode(String email) {
+        Optional<TwoFactorCodes> twoFactorCodes = this.twoFactorCodesRepository.findByEmail(email);
+        if (twoFactorCodes.isPresent()) {
+            return twoFactorCodes.get().getCode();
+        } else {
+            return "";
         }
     }
 }
