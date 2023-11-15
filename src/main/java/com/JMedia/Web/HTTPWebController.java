@@ -136,6 +136,12 @@ public class HTTPWebController {
         return "Set";
     }
 
+    /*
+        @Brief: This method is used to check if a two-factor authentication code is correct.
+        @Param: email - The email of the user to be checked.
+        @Param: code - The code to be checked.
+        @Return: String - Returns "true" if the code is correct.
+     */
     @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping(path="/two-factor-authentication-check")
     public String getTwoFactorAuthenticationCode(@RequestParam (value ="email") String email,
