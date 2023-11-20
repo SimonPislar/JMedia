@@ -9,9 +9,11 @@ public class TwoFactorCodes {
 
     @Id
     @Column(unique=true)
-    String email;
+    private String email;
 
-    String code;
+    private String code;
+
+    private String setTime;
 
     public String getEmail() {
         return email;
@@ -21,11 +23,19 @@ public class TwoFactorCodes {
         return code;
     }
 
+    public String getSetTime() {
+        return setTime;
+    }
+
     public void setEmail(String email) {
         this.email=email;
     }
 
     public void setCode(String code) {
         this.code=code;
+    }
+
+    public void setSetTime(String setTime) {
+        this.setTime=setTime;
     }
 }
