@@ -5,6 +5,7 @@ import com.JMedia.Security.PasswordHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.Optional;
 
 @Service
@@ -13,12 +14,17 @@ public class UserDataController {
     private final UserRepository userRepository;
     private final PasswordHandler passwordHandler;
     private final TwoFactorCodesRepository twoFactorCodesRepository;
+    private final SessionTokenRepository sessionTokenRepository;
 
     @Autowired
-    public UserDataController(UserRepository userRepository, PasswordHandler passwordHandler, TwoFactorCodesRepository twoFactorCodesRepository) {
+    public UserDataController(UserRepository userRepository,
+                              PasswordHandler passwordHandler,
+                              TwoFactorCodesRepository twoFactorCodesRepository,
+                              SessionTokenRepository sessionTokenRepository) {
         this.userRepository = userRepository;
         this.passwordHandler = passwordHandler;
         this.twoFactorCodesRepository = twoFactorCodesRepository;
+        this.sessionTokenRepository = sessionTokenRepository;
     }
 
     /*
@@ -81,13 +87,9 @@ public class UserDataController {
         @Param: email - The email of the user to be checked.
         @Return: String - Returns "true" if the user exists in the database.
     */
-    public String userExists(String email) {
+    public Boolean userExists(String email) {
         Optional<User> userByEmail = this.userRepository.findByEmail(email);
-        if (userByEmail.isPresent()) {
-            return "true";
-        } else {
-            return "false";
-        }
+        return userByEmail.isPresent();
     }
 
     /*
@@ -100,9 +102,13 @@ public class UserDataController {
         Optional<User> user = this.userRepository.findByEmail(email);
         System.out.println("Found user with email: " + email);
         if (user.isPresent()) {
+            LocalTime currentTime = LocalTime.now();
+            String currentTimeString = currentTime.toString();
+            System.out.println("Current time: " + currentTimeString);
             TwoFactorCodes twoFactorCodes = new TwoFactorCodes();
             twoFactorCodes.setEmail(email);
             twoFactorCodes.setCode(code);
+            twoFactorCodes.setSetTime(currentTimeString);
             this.twoFactorCodesRepository.save(twoFactorCodes);
         }
     }
@@ -115,9 +121,71 @@ public class UserDataController {
     public String getTwoFactorCode(String email) {
         Optional<TwoFactorCodes> twoFactorCodes = this.twoFactorCodesRepository.findByEmail(email);
         if (twoFactorCodes.isPresent()) {
-            return twoFactorCodes.get().getCode();
+            TwoFactorCodes twoFactorCodesObject = twoFactorCodes.get();
+            String setTime = twoFactorCodesObject.getSetTime();
+            LocalTime setTimeObject = LocalTime.parse(setTime);
+            LocalTime currentTime = LocalTime.now();
+            if (currentTime.isAfter(setTimeObject.plusMinutes(10))) {
+                this.twoFactorCodesRepository.delete(twoFactorCodesObject);
+                return "";
+            }
+            return twoFactorCodesObject.getCode();
         } else {
             return "";
         }
     }
+
+    /*
+        @Brief: This method is used to delete a two-factor authentication code for a user.
+        @Param: email - The email of the user to be deleted the code.
+        @Return: void - Returns nothing.
+     */
+    public void deleteTwoFactorCode(String email) {
+        Optional<TwoFactorCodes> twoFactorCodes = this.twoFactorCodesRepository.findByEmail(email);
+        twoFactorCodes.ifPresent(this.twoFactorCodesRepository::delete);
+    }
+
+    /*
+        @Brief: This method is used to set a session token for a user.
+        @Param: email - The email of the user to be set the session token.
+        @Param: sessionToken - The session token to be set.
+        @Return: void - Returns nothing.
+     */
+    public void setSessionToken(String email, String sessionToken) {
+        Optional<SessionToken> sessionTokenOptional = this.sessionTokenRepository.findByEmail(email);
+        SessionToken sessionTokenObject;
+        if (sessionTokenOptional.isPresent()) {
+            sessionTokenObject = sessionTokenOptional.get();
+        } else {
+            sessionTokenObject = new SessionToken();
+            sessionTokenObject.setEmail(email);
+        }
+        sessionTokenObject.setToken(sessionToken);
+        this.sessionTokenRepository.save(sessionTokenObject);
+    }
+
+    /*
+        @Brief: This method is used to get a session token for a user.
+        @Param: email - The email of the user whose session token is to be retrieved.
+        @Return: String - Returns the session token.
+     */
+    public String getSessionToken(String email) {
+        Optional<SessionToken> sessionTokenOptional = this.sessionTokenRepository.findByEmail(email);
+        if (sessionTokenOptional.isPresent()) {
+            return sessionTokenOptional.get().getToken();
+        } else {
+            return "";
+        }
+    }
+
+    /*
+        @Brief: This method is used to delete a session token for a user.
+        @Param: email - The email of the user to be deleted the session token.
+        @Return: void - Returns nothing.
+     */
+    public void deleteSessionToken(String email) {
+        Optional<SessionToken> sessionTokenOptional = this.sessionTokenRepository.findByEmail(email);
+        sessionTokenOptional.ifPresent(this.sessionTokenRepository::delete);
+    }
+
 }
