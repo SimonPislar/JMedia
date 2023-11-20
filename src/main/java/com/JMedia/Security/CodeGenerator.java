@@ -7,7 +7,7 @@ import java.security.SecureRandom;
 @Service
 public class CodeGenerator {
 
-    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public CodeGenerator() {
@@ -19,7 +19,7 @@ public class CodeGenerator {
         @Param: length - The length of the code to generate.
         @Return: String - Returns the generated code.
     */
-    public String generateRandomCode(int length) {
+    public String generateCode(int length) {
         StringBuilder stringBuilder = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
             int randomIndex = RANDOM.nextInt(CHARACTERS.length());
@@ -28,4 +28,6 @@ public class CodeGenerator {
         }
         return stringBuilder.toString();
     }
+
+
 }
